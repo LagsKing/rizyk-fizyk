@@ -137,7 +137,7 @@
     </div>
 
     <script>
-        const WEBHOOK_URL = "http://34.60.103.99:5680/webhook/ryzyk";
+        const WEBHOOK_URL = "https://ryzyk-fizyk.duckdns.org/webhook/ryzyk";
         
         let allQuestions = [];
         let currentIndex = 0;
@@ -166,7 +166,6 @@
 
                 const data = await response.json();
                 
-                // Przekształcamy pogrupowane kategorie w płaską listę pytań zachowując kolor/emoji
                 allQuestions = [];
                 data.forEach(kat => {
                     kat.pytania.forEach(p => {
@@ -239,4 +238,5 @@
         }
     </script>
 </body>
+
 </html>
