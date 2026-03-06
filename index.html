@@ -3,104 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ryzyk Fizyk AI</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3407/3407024.png">
-
+    <title>Ryzyk Fizyk AI - Cloud Edition</title>
     <style>
         :root {
-            --bg-color: #0b0b0e;
-            --card-bg: #16161a;
+            --bg-color: #0f0f12;
+            --card-bg: #1a1a1f;
             --text-main: #ffffff;
-            --text-muted: #88888e;
+            --text-muted: #aaaaaa;
             --accent: #a855f7;
-            --btn-sec: #2d2d35;
         }
         
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
             background: var(--bg-color); 
             color: var(--text-main); 
-            margin: 0; padding: 20px; 
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; 
+            padding: 20px; 
         }
 
-        h1 { text-align: center; font-size: 24px; margin-bottom: 25px; letter-spacing: -1px; }
+        h1 { text-align: center; color: #fff; font-size: 26px; margin-bottom: 30px; letter-spacing: -1px;}
 
-        .setup-container, .flashcard {
+        /* Formularz */
+        .setup-container {
             background: var(--card-bg);
             padding: 25px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 400px;
+            border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #222;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        label { display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 8px; margin-top: 15px; text-align: left; }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            background: #2c2c34; 
+            border: 1px solid #444; 
+            color: white; 
+            border-radius: 10px; 
+            font-size: 16px;
             box-sizing: border-box;
         }
 
-        label { display: block; font-size: 13px; color: var(--text-muted); margin: 15px 0 5px 0; text-transform: uppercase; font-weight: bold; }
-        input { 
-            width: 100%; padding: 14px; background: #222; border: 1px solid #333; 
-            color: white; border-radius: 12px; font-size: 16px; box-sizing: border-box;
-        }
-
         button.btn {
-            width: 100%; padding: 16px; margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            margin-top: 20px;
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            color: white; font-weight: 800; border: none; border-radius: 14px;
-            cursor: pointer; text-transform: uppercase; transition: 0.2s;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
         }
-        button.btn:active { transform: scale(0.97); }
-        .btn-secondary { background: var(--btn-sec); color: #ccc; margin-top: 10px; border: 1px solid #3f3f46; cursor: pointer; border-radius: 12px; padding: 12px; font-weight: bold; }
+        button.btn:active { transform: scale(0.98); }
+        button.btn-secondary { background: #333; margin-top: 15px; display: none; color: #ccc; border: 1px solid #444; }
 
-        #loader { display: none; margin-top: 50px; text-align: center; color: var(--accent); font-weight: bold; }
-        
-        #game-container { display: none; width: 100%; max-width: 400px; }
-        .progress-counter { text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 12px; font-weight: bold; }
+        /* Ładowanie */
+        .loader-container { display: none; text-align: center; margin-top: 40px; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(168, 85, 247, 0.2);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .flashcard { border-top: 6px solid var(--accent); animation: slideUp 0.4s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Gra */
+        #game-container { display: none; margin-top: 20px; }
+        .progress-counter { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 15px; }
 
-        .category-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .category-name { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
+        .flashcard {
+            background: var(--card-bg);
+            border-top: 6px solid var(--accent);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            animation: fadeIn 0.4s;
+        }
 
-        .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .category-emoji { font-size: 24px; }
+        .category-name { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-        .answer-section { display: none; border-top: 1px solid #333; padding-top: 20px; margin-top: 10px; }
-        .answer-text { font-size: 36px; font-weight: 900; color: #fff; text-align: center; }
-        .fun-fact { font-size: 14px; color: var(--text-muted); font-style: italic; text-align: center; margin: 15px 0; line-height: 1.5; }
+        .question { font-size: 20px; font-weight: 500; margin: 0 0 25px 0; line-height: 1.5; text-align: left;}
 
-        .nav-group { display: flex; gap: 10px; flex-direction: column; }
+        .answer-section {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            animation: fadeIn 0.3s;
+        }
+
+        .answer-text { font-size: 28px; font-weight: 800; color: #fff; text-align: center; margin: 0 0 10px 0; }
+        .fun-fact { font-size: 15px; color: var(--text-muted); font-style: italic; text-align: center; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <h1>🎮 RYZYK FIZYK AI</h1>
+    <h1>🎮 Ryzyk Fizyk AI</h1>
 
     <div class="setup-container" id="setup-screen">
-        <label>TEMATY (po przecinku):</label>
+        <label>Kategorie (po przecinku):</label>
         <input type="text" id="cats" value="Polskie absurdy, Zwierzęta, Kosmos">
-        <label>PYTAŃ NA KATEGORIĘ:</label>
+
+        <label>Liczba pytań na kategorię:</label>
         <input type="number" id="count" value="3" min="1">
+
         <button class="btn" onclick="generateQuestions()">Generuj Grę</button>
     </div>
 
-    <div id="loader">✨ AI szykuje wyzwanie...</div>
+    <div class="loader-container" id="loader">
+        <div class="spinner"></div>
+        <div style="color: var(--accent);">AI szykuje wyzwanie...</div>
+    </div>
 
     <div id="game-container">
-        <div class="progress-counter" id="progress"></div>
+        <div class="progress-counter" id="progress">Pytanie 1 z X</div>
         <div id="card-slot"></div>
     </div>
 
     <script>
-        // TUTAJ POPRAWIONY LINK:
-        const WEBHOOK_URL = "https://ryzyk-fizyk.duckdns.org/webhook/ryzyk";
+        const WEBHOOK_URL = "http://34.60.103.99:5680/webhook/ryzyk";
         
         let allQuestions = [];
         let currentIndex = 0;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
         async function generateQuestions() {
             const categories = document.getElementById('cats').value;
@@ -116,13 +164,9 @@
                     body: JSON.stringify({ categories, count })
                 });
 
-                if (!response.ok) throw new Error('Serwer n8n zwrócił błąd: ' + response.status);
-
-                const rawData = await response.text();
-                // Czyścimy ewentualny Markdown z AI
-                const cleanData = rawData.replace(/```json/g, '').replace(/```/g, '').trim();
-                const data = JSON.parse(cleanData);
+                const data = await response.json();
                 
+                // Przekształcamy pogrupowane kategorie w płaską listę pytań zachowując kolor/emoji
                 allQuestions = [];
                 data.forEach(kat => {
                     kat.pytania.forEach(p => {
@@ -130,12 +174,14 @@
                             category: kat.kategoria,
                             kolor: kat.kolor || "#a855f7",
                             emoji: kat.emoji || "🎲",
-                            q: p.q, a: p.a, f: p.f
+                            q: p.q,
+                            a: p.a,
+                            f: p.f
                         });
                     });
                 });
 
-                allQuestions.sort(() => Math.random() - 0.5);
+                shuffle(allQuestions);
                 currentIndex = 0;
 
                 document.getElementById('loader').style.display = 'none';
@@ -143,8 +189,7 @@
                 renderCard();
 
             } catch (error) {
-                console.error("Szczegóły błędu:", error);
-                alert("Błąd połączenia! Sprawdź czy n8n jest ACTIVE i czy link jest poprawny.");
+                alert("Błąd! Sprawdź czy n8n w chmurze działa i czy IP jest poprawne.");
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'block';
             }
@@ -155,26 +200,24 @@
             const q = allQuestions[currentIndex];
             const isLast = currentIndex === allQuestions.length - 1;
 
-            document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
+            document.getElementById('progress').innerText = `Pytanie ${currentIndex + 1} z ${allQuestions.length}`;
 
             slot.innerHTML = `
                 <div class="flashcard" style="border-top-color: ${q.kolor}">
                     <div class="category-header">
-                        <span>${q.emoji}</span>
+                        <span class="category-emoji">${q.emoji}</span>
                         <span class="category-name" style="color: ${q.kolor}">${q.category}</span>
                     </div>
                     <p class="question">${q.q}</p>
+                    
                     <button class="btn" id="rev-btn" onclick="showAnswer()">Pokaż odpowiedź</button>
                     
                     <div class="answer-section" id="ans-sec">
-                        <div class="answer-text">${q.a}</div>
+                        <p class="answer-text">${q.a}</p>
                         <p class="fun-fact">${q.f}</p>
-                        <div class="nav-group">
-                            <button class="btn" onclick="next()">
-                                ${isLast ? "Zakończ i wróć" : "Dalej"}
-                            </button>
-                            <button class="btn-secondary" onclick="prev()">⬅ Wstecz</button>
-                        </div>
+                        <button class="btn btn-secondary" style="display:block" onclick="next()">
+                            ${isLast ? "Zakończ i wróć" : "Następne pytanie"}
+                        </button>
                     </div>
                 </div>
             `;
@@ -186,19 +229,12 @@
         }
 
         function next() {
-            if (++currentIndex < allQuestions.length) {
+            currentIndex++;
+            if (currentIndex < allQuestions.length) {
                 renderCard();
             } else {
                 document.getElementById('game-container').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'block';
-            }
-        }
-
-        function prev() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderCard();
-                showAnswer();
             }
         }
     </script>
