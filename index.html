@@ -109,10 +109,9 @@
             object-fit: cover;
             position: relative;
             z-index: 2;
-            animation: fadeInImg 0.5s ease-in forwards;
+            opacity: 0; /* Startowo niewidoczny */
+            transition: opacity 0.6s ease-in-out;
         }
-
-        @keyframes fadeInImg { from { opacity: 0; } to { opacity: 1; } }
 
         .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
         .answer-section { display: none; border-top: 1px solid #333; padding-top: 20px; margin-top: 10px; }
@@ -300,8 +299,8 @@
             // ZAWSZE WYMUSZAMY RAMKĘ NA OBRAZEK
             let imgHTML = `
                 <div class="img-wrapper">
-                    <div class="img-loading-text">🖼️ Generowanie obrazu...</div>
-                    <img src="${q.img}" class="question-image" alt="AI Image" onerror="this.style.display='none'">
+                    <div id="img-loader-text" class="img-loading-text">🖼️ Generowanie obrazu...</div>
+                    <img id="current-q-img" src="${q.img}" class="question-image" alt="AI Image">
                 </div>
             `;
 
@@ -329,6 +328,33 @@
                     </div>
                 </div>
             `;
+
+            // CAŁA MAGIA BEZPIECZEŃSTWA ŁADOWANIA OBRAZKA (JS Event Listeners)
+            const qImg = document.getElementById('current-q-img');
+            const qLoader = document.getElementById('img-loader-text');
+            
+            if (qImg) {
+                // Jeśli przeglądarka załadowała z cache błyskawicznie:
+                if (qImg.complete && qImg.naturalHeight !== 0) {
+                    qImg.style.opacity = '1';
+                    if (qLoader) qLoader.style.display = 'none';
+                } else {
+                    // Czekamy na sygnał z sieci, że plik pobrano
+                    qImg.addEventListener('load', () => {
+                        qImg.style.opacity = '1';
+                        if (qLoader) qLoader.style.display = 'none';
+                    });
+                    
+                    // Jeśli połączenie padnie lub adres jest błędny
+                    qImg.addEventListener('error', () => {
+                        if (qLoader) {
+                            qLoader.innerText = "❌ Obraz niedostępny";
+                            qLoader.style.animation = "none";
+                            qLoader.style.color = "var(--danger)";
+                        }
+                    });
+                }
+            }
         }
 
         function showAnswer() {
