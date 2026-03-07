@@ -296,11 +296,11 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
-            // Pusty tag img na start, bez src!
+            // Pusty tag img na start, bez src. Dodałem crossorigin i referrerpolicy!
             let imgHTML = `
                 <div class="img-wrapper">
                     <div id="img-loader-text" class="img-loading-text">🖼️ Generowanie obrazu...</div>
-                    <img id="current-q-img" class="question-image" alt="AI Image">
+                    <img id="current-q-img" class="question-image" alt="AI Image" crossorigin="anonymous" referrerpolicy="no-referrer">
                 </div>
             `;
 
