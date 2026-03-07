@@ -112,10 +112,7 @@
             animation: fadeInImg 0.5s ease-in forwards;
         }
 
-        @keyframes fadeInImg {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeInImg { from { opacity: 0; } to { opacity: 1; } }
 
         .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
         .answer-section { display: none; border-top: 1px solid #333; padding-top: 20px; margin-top: 10px; }
@@ -244,9 +241,16 @@
                 const cleanData = rawData.replace(/```json/gi, '').replace(/```/g, '').trim();
                 let parsedData = JSON.parse(cleanData);
                 
-                if (parsedData && !Array.isArray(parsedData)) {
-                    if (parsedData.text) parsedData = JSON.parse(parsedData.text.replace(/```json/gi, '').replace(/```/g, '').trim());
-                    else if (parsedData.output) parsedData = JSON.parse(parsedData.output.replace(/```json/gi, '').replace(/```/g, '').trim());
+                // SUPER ODPORNE ROZPAKOWYWANIE DANYCH Z N8N
+                let extractedText = null;
+                if (Array.isArray(parsedData) && parsedData.length === 1 && typeof parsedData[0] === 'object') {
+                    extractedText = parsedData[0].text || parsedData[0].output;
+                } else if (parsedData && !Array.isArray(parsedData) && typeof parsedData === 'object') {
+                    extractedText = parsedData.text || parsedData.output;
+                }
+
+                if (extractedText) {
+                    parsedData = JSON.parse(extractedText.replace(/```json/gi, '').replace(/```/g, '').trim());
                 }
 
                 allQuestions = [];
@@ -255,11 +259,10 @@
                 parsedData.forEach(kat => {
                     kat.pytania.forEach(p => {
                         // Magia Pollinations.ai - generowanie URL na podstawie promptu AI
-                        let imageUrl = "";
-                        if(p.img_prompt) {
-                            const randomSeed = Math.floor(Math.random() * 99999);
-                            imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p.img_prompt)}?nologo=true&width=400&height=250&seed=${randomSeed}`;
-                        }
+                        let promptText = p.img_prompt || (kat.kategoria + " concept art, dark cinematic, neon lighting");
+                        const randomSeed = Math.floor(Math.random() * 999999);
+                        
+                        let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?nologo=true&width=400&height=250&seed=${randomSeed}`;
 
                         allQuestions.push({
                             category: kat.kategoria,
@@ -294,13 +297,13 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
-            // Jeśli mamy link do obrazka, tworzymy widoczny "pojemnik" z animacją ładowania
-            let imgHTML = q.img ? `
+            // ZAWSZE WYMUSZAMY RAMKĘ NA OBRAZEK
+            let imgHTML = `
                 <div class="img-wrapper">
                     <div class="img-loading-text">🖼️ Generowanie obrazu...</div>
-                    <img src="${q.img}" class="question-image" alt="AI Image">
+                    <img src="${q.img}" class="question-image" alt="AI Image" onerror="this.style.display='none'">
                 </div>
-            ` : '';
+            `;
 
             slot.innerHTML = `
                 <div class="flashcard" style="border-top-color: ${q.kolor}">
