@@ -86,8 +86,12 @@
             border: 1px solid #333;
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
             background: #222; /* Placeholder podczas ładowania */
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
+            animation: fadeInImg 0.8s ease-in forwards;
+        }
+
+        @keyframes fadeInImg {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
@@ -230,7 +234,8 @@
                         // Magia Pollinations.ai - generowanie URL na podstawie promptu AI
                         let imageUrl = "";
                         if(p.img_prompt) {
-                            imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p.img_prompt)}?nologo=true&width=400&height=250`;
+                            const randomSeed = Math.floor(Math.random() * 99999);
+                            imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p.img_prompt)}?nologo=true&width=400&height=250&seed=${randomSeed}`;
                         }
 
                         allQuestions.push({
@@ -266,8 +271,8 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
-            // Tag <img> z obsługą animacji (onload) i błędu (onerror)
-            let imgHTML = q.img ? `<img src="${q.img}" class="question-image" alt="AI Image" onload="this.style.opacity=1" onerror="this.style.display='none'">` : '';
+            // Tag <img> z usuniętym onload (który był blokowany przez CSP) i czystym CSS
+            let imgHTML = q.img ? `<img src="${q.img}" class="question-image" alt="AI Image" onerror="this.style.display='none'">` : '';
 
             slot.innerHTML = `
                 <div class="flashcard" style="border-top-color: ${q.kolor}">
