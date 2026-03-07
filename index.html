@@ -59,48 +59,13 @@
         .btn-secondary { background: var(--btn-sec); color: #ccc; margin-top: 10px; border: 1px solid #3f3f46; cursor: pointer; border-radius: 12px; padding: 12px; font-weight: bold; }
         .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 12px; padding: 8px; margin-top: 20px; width: auto; border-radius: 8px; cursor: pointer; }
 
-        /* --- NOWY EKRAN ŁADOWANIA --- */
-        #loader { 
-            display: none; 
-            margin-top: 40px; 
-            width: 100%; 
-            max-width: 400px; 
-        }
-        
-        .loading-text {
-            text-align: center; 
-            color: var(--accent); 
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
-            min-height: 40px; /* żeby tekst nie skakał przy zmianie linii */
-            animation: pulse 1.5s infinite ease-in-out;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 12px;
-            background: #222;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #6366f1, #a855f7);
-            border-radius: 10px;
-            transition: width 0.5s ease;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        /* -------------------------- */
+        /* --- EKRAN ŁADOWANIA --- */
+        #loader { display: none; margin-top: 40px; width: 100%; max-width: 400px; }
+        .loading-text { text-align: center; color: var(--accent); font-weight: bold; font-size: 14px; margin-bottom: 15px; min-height: 40px; animation: pulse 1.5s infinite ease-in-out; }
+        .progress-bar-container { width: 100%; height: 12px; background: #222; border-radius: 10px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); border: 1px solid #333; }
+        .progress-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #a855f7); border-radius: 10px; transition: width 0.5s ease; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        /* ----------------------- */
         
         #game-container { display: none; width: 100%; max-width: 400px; }
         .progress-counter { text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 12px; font-weight: bold; }
@@ -111,14 +76,25 @@
         .category-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .category-name { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
 
-        .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
+        /* --- OBRAZEK PYTANIA --- */
+        .question-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            background: #222; /* Placeholder podczas ładowania */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
 
+        .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
         .answer-section { display: none; border-top: 1px solid #333; padding-top: 20px; margin-top: 10px; }
         .answer-text { font-size: 36px; font-weight: 900; color: #fff; text-align: center; }
         .fun-fact { font-size: 14px; color: var(--text-muted); font-style: italic; text-align: center; margin: 15px 0; line-height: 1.5; }
-
         .nav-group { display: flex; gap: 10px; flex-direction: column; }
-        
         .history-info { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 15px; }
     </style>
 </head>
@@ -134,7 +110,6 @@
         
         <button class="btn" onclick="generateQuestions()">Generuj Grę</button>
         
-        <!-- Sekcja czyszczenia pamięci (dodana z poprzedniej wersji) -->
         <div style="text-align: center;">
             <div class="history-info" id="history-stats">Pamięć: 0 użytych pytań.</div>
             <button class="btn-danger" onclick="clearHistory()">🗑️ Wyczyść pamięć pytań</button>
@@ -156,40 +131,31 @@
 
     <script>
         const WEBHOOK_URL = "https://ryzyk-fizyk.duckdns.org/webhook/ryzyk";
-        
         let allQuestions = [];
         let currentIndex = 0;
 
-        // --- Zmienne dla paska ładowania ---
         let loadingTextInterval;
         let progressInterval;
         const funnyMessages = [
             "Przeszukuję czeluści internetu...",
             "Wyciągam najbardziej absurdalne liczby...",
             "Aplikuję dawkę jadowitego sarkazmu...",
-            "Piszę docinki na Twój temat...",
-            "To trwa dłużej niż budowa polskiej autostrady...",
-            "Już prawie, grzeję procesory w chmurze..."
+            "Generuję wizualizacje Twojej porażki...",
+            "To trwa dłużej niż remont łazienki...",
+            "Mieszam piksele z cyberpunkiem..."
         ];
 
-        // --- Inicjalizacja historii (zabezpieczenie przed powtórkami) ---
         updateHistoryUI();
 
-        function getHistory() {
-            return JSON.parse(localStorage.getItem('ryzyk_history') || '[]');
-        }
-
+        function getHistory() { return JSON.parse(localStorage.getItem('ryzyk_history') || '[]'); }
         function clearHistory() {
             localStorage.removeItem('ryzyk_history');
             updateHistoryUI();
             alert("Pamięć wyczyszczona. AI może znów losować wszystkie pytania.");
         }
-
         function updateHistoryUI() {
-            const hist = getHistory();
-            document.getElementById('history-stats').innerText = `Pamięć: zapamiętano ${hist.length} starych pytań.`;
+            document.getElementById('history-stats').innerText = `Pamięć: zapamiętano ${getHistory().length} starych pytań.`;
         }
-        // ----------------------------------------------------------------
 
         function startLoadingUI() {
             document.getElementById('setup-screen').style.display = 'none';
@@ -198,24 +164,18 @@
             const msgEl = document.getElementById('loading-msg');
             const fillEl = document.getElementById('progress-fill');
             
-            let msgIdx = 0;
-            let currentWidth = 0;
-            
-            msgEl.innerText = "✨ Budzę sztuczną inteligencję...";
+            let msgIdx = 0; let currentWidth = 0;
+            msgEl.innerText = "✨ " + funnyMessages[0];
             fillEl.style.width = "0%";
 
-            // Zmiana tekstu co 3 sekundy
             loadingTextInterval = setInterval(() => {
-                msgEl.innerText = "✨ " + funnyMessages[msgIdx];
                 msgIdx = (msgIdx + 1) % funnyMessages.length;
+                msgEl.innerText = "✨ " + funnyMessages[msgIdx];
             }, 3000);
 
-            // Symulacja paska postępu (dojeżdża do max 90% i czeka)
             progressInterval = setInterval(() => {
                 if (currentWidth < 90) {
-                    // Zwalnia im bliżej 90%
-                    let increment = Math.random() * (90 - currentWidth) * 0.1 + 1;
-                    currentWidth += increment;
+                    currentWidth += Math.random() * (90 - currentWidth) * 0.1 + 1;
                     fillEl.style.width = currentWidth + "%";
                 }
             }, 500);
@@ -224,10 +184,8 @@
         function stopLoadingUI(success) {
             clearInterval(loadingTextInterval);
             clearInterval(progressInterval);
-            
             if (success) {
                 document.getElementById('progress-fill').style.width = "100%";
-                // Czekamy ułamek sekundy, żeby gracz zobaczył 100%
                 setTimeout(() => {
                     document.getElementById('loader').style.display = 'none';
                     document.getElementById('game-container').style.display = 'block';
@@ -240,22 +198,17 @@
         }
 
         async function generateQuestions() {
-            startLoadingUI(); // Start paska
-            const history = getHistory(); // Pobieramy czarną listę z pamięci
+            startLoadingUI();
+            const history = getHistory();
 
             try {
                 const categories = document.getElementById('cats').value;
                 const count = document.getElementById('count').value;
 
-                // Wysyłamy kategorie, ilość i czarną listę starych pytań
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        categories: categories, 
-                        count: count,
-                        blacklist: history
-                    })
+                    body: JSON.stringify({ categories, count, blacklist: history })
                 });
 
                 if (!response.ok) throw new Error('Błąd HTTP: ' + response.status);
@@ -264,31 +217,32 @@
                 const cleanData = rawData.replace(/```json/gi, '').replace(/```/g, '').trim();
                 let parsedData = JSON.parse(cleanData);
                 
-                // KULOODPORNY MECHANIZM ROZPAKOWUJĄCY:
                 if (parsedData && !Array.isArray(parsedData)) {
-                    if (parsedData.text) {
-                        parsedData = JSON.parse(parsedData.text.replace(/```json/gi, '').replace(/```/g, '').trim());
-                    } else if (parsedData.output) {
-                        parsedData = JSON.parse(parsedData.output.replace(/```json/gi, '').replace(/```/g, '').trim());
-                    }
+                    if (parsedData.text) parsedData = JSON.parse(parsedData.text.replace(/```json/gi, '').replace(/```/g, '').trim());
+                    else if (parsedData.output) parsedData = JSON.parse(parsedData.output.replace(/```json/gi, '').replace(/```/g, '').trim());
                 }
 
                 allQuestions = [];
-                let newQuestionsText = []; // Do zapisania w historii
+                let newQuestionsText = []; 
 
                 parsedData.forEach(kat => {
                     kat.pytania.forEach(p => {
+                        // Magia Pollinations.ai - generowanie URL na podstawie promptu AI
+                        let imageUrl = "";
+                        if(p.img_prompt) {
+                            imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(p.img_prompt)}?nologo=true&width=400&height=250`;
+                        }
+
                         allQuestions.push({
                             category: kat.kategoria,
                             kolor: kat.kolor || "#a855f7",
                             emoji: kat.emoji || "🎲",
-                            q: p.q, a: p.a, f: p.f
+                            q: p.q, a: p.a, f: p.f, img: imageUrl
                         });
-                        newQuestionsText.push(p.q); // Zbieramy nowości
+                        newQuestionsText.push(p.q); 
                     });
                 });
 
-                // Zapisujemy nowe pytania do historii (max 50 sztuk)
                 const updatedHistory = [...new Set([...history, ...newQuestionsText])].slice(-50);
                 localStorage.setItem('ryzyk_history', JSON.stringify(updatedHistory));
                 updateHistoryUI();
@@ -296,12 +250,12 @@
                 allQuestions.sort(() => Math.random() - 0.5);
                 currentIndex = 0;
 
-                stopLoadingUI(true); // Stop paska i pokazanie gry
+                stopLoadingUI(true);
 
             } catch (error) {
                 console.error("Szczegóły błędu:", error);
-                alert("Błąd połączenia lub parsowania! Serwer wymiękł.");
-                stopLoadingUI(false); // Stop paska i powrót
+                alert("Błąd połączenia! Serwer wymiękł.");
+                stopLoadingUI(false);
             }
         }
 
@@ -312,12 +266,18 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
+            // Tag <img> z obsługą animacji (onload) i błędu (onerror)
+            let imgHTML = q.img ? `<img src="${q.img}" class="question-image" alt="AI Image" onload="this.style.opacity=1" onerror="this.style.display='none'">` : '';
+
             slot.innerHTML = `
                 <div class="flashcard" style="border-top-color: ${q.kolor}">
                     <div class="category-header">
                         <span>${q.emoji}</span>
                         <span class="category-name" style="color: ${q.kolor}">${q.category}</span>
                     </div>
+                    
+                    ${imgHTML}
+                    
                     <p class="question">${q.q}</p>
                     <button class="btn" id="rev-btn" onclick="showAnswer()">Pokaż odpowiedź</button>
                     
@@ -341,20 +301,15 @@
         }
 
         function next() {
-            if (++currentIndex < allQuestions.length) {
-                renderCard();
-            } else {
+            if (++currentIndex < allQuestions.length) renderCard();
+            else {
                 document.getElementById('game-container').style.display = 'none';
                 document.getElementById('setup-screen').style.display = 'block';
             }
         }
 
         function prev() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderCard();
-                showAnswer();
-            }
+            if (currentIndex > 0) { currentIndex--; renderCard(); showAnswer(); }
         }
     </script>
 </body>
