@@ -20,6 +20,7 @@
             --accent: #a855f7;
             --btn-sec: #2d2d35;
             --danger: #ef4444;
+            --warning: #eab308;
         }
         
         body { 
@@ -257,11 +258,10 @@
 
                 parsedData.forEach(kat => {
                     kat.pytania.forEach(p => {
-                        // Magia Pollinations.ai - generowanie URL na podstawie promptu AI
+                        // Dodany parametr model=flux do wymuszenia szybszego klastra AI
                         let promptText = p.img_prompt || (kat.kategoria + " concept art, dark cinematic, neon lighting");
                         const randomSeed = Math.floor(Math.random() * 999999);
-                        
-                        let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?nologo=true&width=400&height=250&seed=${randomSeed}`;
+                        let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?nologo=true&width=400&height=250&seed=${randomSeed}&model=flux`;
 
                         allQuestions.push({
                             category: kat.kategoria,
@@ -335,7 +335,7 @@
             
             if (qImg) {
                 let retries = 0;
-                const maxRetries = 2; // Maksymalnie 2 próby ratunkowe
+                const maxRetries = 1; // 1 Próba ratunkowa z Pollinations
 
                 const attemptLoad = (imgUrl) => {
                     console.log("Próbuję załadować obraz z URL:", imgUrl);
@@ -351,24 +351,29 @@
                 qImg.onerror = () => {
                     if (retries < maxRetries) {
                         retries++;
-                        console.warn(`Błąd serwera Pollinations. Ponawiam próbę ${retries}/${maxRetries}...`);
-                        if (qLoader) {
-                            qLoader.innerText = `🔄 Ponawianie (${retries}/${maxRetries})...`;
-                        }
+                        console.warn(`Błąd serwera AI. Ponawiam próbę...`);
                         
-                        // Zmieniamy seed w linku, żeby ominąć zablokowany węzeł u nich na serwerach
                         const newSeed = Math.floor(Math.random() * 999999);
                         const newUrl = q.img.replace(/seed=\d+/, `seed=${newSeed}`);
-                        
-                        // Czekamy 1.5 sekundy, żeby serwer Pollinations odetchnął
-                        setTimeout(() => attemptLoad(newUrl), 1500);
+                        setTimeout(() => attemptLoad(newUrl), 1000);
                     } else {
-                        console.error("Wystąpił ostateczny błąd podczas ładowania obrazka (502)!");
+                        // Awaryjne ładowanie zastępczego tła z Picsum. Zawsze działa!
+                        console.error("Pollinations całkowicie leży. Ładuję tło kinowe z Picsum.");
                         if (qLoader) {
-                            qLoader.innerText = "❌ Serwer obrazów przeciążony";
+                            qLoader.innerText = "⚠️ Użyto tła zastępczego";
+                            qLoader.style.color = "var(--warning)";
                             qLoader.style.animation = "none";
-                            qLoader.style.color = "var(--danger)";
                         }
+                        
+                        // Zmieniamy funkcję onload dla nowego źródła obrazka
+                        qImg.onload = () => {
+                            qImg.style.opacity = '1';
+                            setTimeout(() => { if(qLoader) qLoader.style.display = 'none'; }, 1500);
+                        };
+                        
+                        // Dodajemy ciemny filtr i wczytujemy abstrakcyjne zdjęcie
+                        qImg.style.filter = "brightness(0.5) blur(1px)";
+                        qImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/400/250`;
                     }
                 };
 
