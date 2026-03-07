@@ -329,13 +329,19 @@
                 </div>
             `;
 
-            // CAŁA MAGIA BEZPIECZEŃSTWA ŁADOWANIA OBRAZKA (JS Event Listeners)
+            // CAŁA MAGIA BEZPIECZEŃSTWA ŁADOWANIA OBRAZKA I RETRY
             const qImg = document.getElementById('current-q-img');
             const qLoader = document.getElementById('img-loader-text');
             
             if (qImg) {
-                console.log("Próbuję załadować obraz z URL:", q.img); // <-- Loguje do konsoli, co próbujemy otworzyć
-                
+                let retries = 0;
+                const maxRetries = 2; // Maksymalnie 2 próby ratunkowe
+
+                const attemptLoad = (imgUrl) => {
+                    console.log("Próbuję załadować obraz z URL:", imgUrl);
+                    qImg.src = imgUrl;
+                };
+
                 // Przypisujemy zachowania ZANIM zlecimy pobieranie
                 qImg.onload = () => {
                     qImg.style.opacity = '1';
@@ -343,16 +349,31 @@
                 };
                 
                 qImg.onerror = () => {
-                    console.error("Wystąpił błąd podczas ładowania obrazka z Pollinations!");
-                    if (qLoader) {
-                        qLoader.innerText = "❌ Obraz niedostępny";
-                        qLoader.style.animation = "none";
-                        qLoader.style.color = "var(--danger)";
+                    if (retries < maxRetries) {
+                        retries++;
+                        console.warn(`Błąd serwera Pollinations. Ponawiam próbę ${retries}/${maxRetries}...`);
+                        if (qLoader) {
+                            qLoader.innerText = `🔄 Ponawianie (${retries}/${maxRetries})...`;
+                        }
+                        
+                        // Zmieniamy seed w linku, żeby ominąć zablokowany węzeł u nich na serwerach
+                        const newSeed = Math.floor(Math.random() * 999999);
+                        const newUrl = q.img.replace(/seed=\d+/, `seed=${newSeed}`);
+                        
+                        // Czekamy 1.5 sekundy, żeby serwer Pollinations odetchnął
+                        setTimeout(() => attemptLoad(newUrl), 1500);
+                    } else {
+                        console.error("Wystąpił ostateczny błąd podczas ładowania obrazka (502)!");
+                        if (qLoader) {
+                            qLoader.innerText = "❌ Serwer obrazów przeciążony";
+                            qLoader.style.animation = "none";
+                            qLoader.style.color = "var(--danger)";
+                        }
                     }
                 };
 
-                // Dopiero teraz każemy przeglądarce rozpocząć pobieranie pliku
-                qImg.src = q.img;
+                // Pierwsza próba pobrania
+                attemptLoad(q.img);
             }
         }
 
