@@ -296,11 +296,11 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
-            // ZAWSZE WYMUSZAMY RAMKĘ NA OBRAZEK
+            // Pusty tag img na start, bez src!
             let imgHTML = `
                 <div class="img-wrapper">
                     <div id="img-loader-text" class="img-loading-text">🖼️ Generowanie obrazu...</div>
-                    <img id="current-q-img" src="${q.img}" class="question-image" alt="AI Image">
+                    <img id="current-q-img" class="question-image" alt="AI Image">
                 </div>
             `;
 
@@ -334,26 +334,25 @@
             const qLoader = document.getElementById('img-loader-text');
             
             if (qImg) {
-                // Jeśli przeglądarka załadowała z cache błyskawicznie:
-                if (qImg.complete && qImg.naturalHeight !== 0) {
+                console.log("Próbuję załadować obraz z URL:", q.img); // <-- Loguje do konsoli, co próbujemy otworzyć
+                
+                // Przypisujemy zachowania ZANIM zlecimy pobieranie
+                qImg.onload = () => {
                     qImg.style.opacity = '1';
                     if (qLoader) qLoader.style.display = 'none';
-                } else {
-                    // Czekamy na sygnał z sieci, że plik pobrano
-                    qImg.addEventListener('load', () => {
-                        qImg.style.opacity = '1';
-                        if (qLoader) qLoader.style.display = 'none';
-                    });
-                    
-                    // Jeśli połączenie padnie lub adres jest błędny
-                    qImg.addEventListener('error', () => {
-                        if (qLoader) {
-                            qLoader.innerText = "❌ Obraz niedostępny";
-                            qLoader.style.animation = "none";
-                            qLoader.style.color = "var(--danger)";
-                        }
-                    });
-                }
+                };
+                
+                qImg.onerror = () => {
+                    console.error("Wystąpił błąd podczas ładowania obrazka z Pollinations!");
+                    if (qLoader) {
+                        qLoader.innerText = "❌ Obraz niedostępny";
+                        qLoader.style.animation = "none";
+                        qLoader.style.color = "var(--danger)";
+                    }
+                };
+
+                // Dopiero teraz każemy przeglądarce rozpocząć pobieranie pliku
+                qImg.src = q.img;
             }
         }
 
