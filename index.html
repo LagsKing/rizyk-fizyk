@@ -20,7 +20,6 @@
             --accent: #a855f7;
             --btn-sec: #2d2d35;
             --danger: #ef4444;
-            --warning: #eab308;
         }
         
         body { 
@@ -77,43 +76,6 @@
         .category-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .category-name { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
 
-        /* --- OBRAZEK PYTANIA Z PLACEHOLDEREM --- */
-        .img-wrapper {
-            position: relative;
-            width: 100%;
-            height: 200px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            background: #1a1a20;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-        }
-        
-        .img-loading-text {
-            color: var(--accent);
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            animation: pulse 1.5s infinite;
-            position: absolute;
-            z-index: 1;
-            text-align: center;
-        }
-
-        .question-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: relative;
-            z-index: 2;
-            opacity: 0; /* Startowo niewidoczny */
-            transition: opacity 0.6s ease-in-out;
-        }
-
         .question { font-size: 21px; font-weight: 700; line-height: 1.4; margin-bottom: 25px; }
         .answer-section { display: none; border-top: 1px solid #333; padding-top: 20px; margin-top: 10px; }
         .answer-text { font-size: 36px; font-weight: 900; color: #fff; text-align: center; }
@@ -164,9 +126,9 @@
             "Przeszukuję czeluści internetu...",
             "Wyciągam najbardziej absurdalne liczby...",
             "Aplikuję dawkę jadowitego sarkazmu...",
-            "Generuję wizualizacje Twojej porażki...",
+            "Piszę docinki na Twój temat...",
             "To trwa dłużej niż remont łazienki...",
-            "Mieszam piksele z cyberpunkiem..."
+            "Grzeję procesory w chmurze..."
         ];
 
         updateHistoryUI();
@@ -199,7 +161,7 @@
 
             progressInterval = setInterval(() => {
                 if (currentWidth < 90) {
-                    currentWidth += Math.random() * (90 - currentWidth) * 0.1 + 1;
+                    currentWidth += Math.random() * (90 - currentWidth) * 0.08 + 0.5;
                     fillEl.style.width = currentWidth + "%";
                 }
             }, 500);
@@ -229,11 +191,18 @@
                 const categories = document.getElementById('cats').value;
                 const count = document.getElementById('count').value;
 
+                // Krótszy timeout, bo bez obrazków powinno pójść znacznie szybciej
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ categories, count, blacklist: history })
+                    body: JSON.stringify({ categories, count, blacklist: history }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
                 if (!response.ok) throw new Error('Błąd HTTP: ' + response.status);
 
@@ -258,16 +227,13 @@
 
                 parsedData.forEach(kat => {
                     kat.pytania.forEach(p => {
-                        // Dodany parametr model=flux do wymuszenia szybszego klastra AI
-                        let promptText = p.img_prompt || (kat.kategoria + " concept art, dark cinematic, neon lighting");
-                        const randomSeed = Math.floor(Math.random() * 999999);
-                        let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?nologo=true&width=400&height=250&seed=${randomSeed}&model=flux`;
-
                         allQuestions.push({
                             category: kat.kategoria,
                             kolor: kat.kolor || "#a855f7",
                             emoji: kat.emoji || "🎲",
-                            q: p.q, a: p.a, f: p.f, img: imageUrl
+                            q: p.q, 
+                            a: p.a, 
+                            f: p.f
                         });
                         newQuestionsText.push(p.q); 
                     });
@@ -284,7 +250,11 @@
 
             } catch (error) {
                 console.error("Szczegóły błędu:", error);
-                alert("Błąd połączenia! Serwer wymiękł.");
+                if (error.name === 'AbortError') {
+                    alert("Timeout! Serwer myślał zbyt długo.");
+                } else {
+                    alert("Błąd połączenia lub parsowania danych! Serwer wymiękł.");
+                }
                 stopLoadingUI(false);
             }
         }
@@ -296,22 +266,12 @@
 
             document.getElementById('progress').innerText = `PYTANIE ${currentIndex + 1} Z ${allQuestions.length}`;
 
-            // Pusty tag img na start, bez src. Dodałem crossorigin i referrerpolicy!
-            let imgHTML = `
-                <div class="img-wrapper">
-                    <div id="img-loader-text" class="img-loading-text">🖼️ Generowanie obrazu...</div>
-                    <img id="current-q-img" class="question-image" alt="AI Image" crossorigin="anonymous" referrerpolicy="no-referrer">
-                </div>
-            `;
-
             slot.innerHTML = `
                 <div class="flashcard" style="border-top-color: ${q.kolor}">
                     <div class="category-header">
                         <span>${q.emoji}</span>
                         <span class="category-name" style="color: ${q.kolor}">${q.category}</span>
                     </div>
-                    
-                    ${imgHTML}
                     
                     <p class="question">${q.q}</p>
                     <button class="btn" id="rev-btn" onclick="showAnswer()">Pokaż odpowiedź</button>
@@ -328,58 +288,6 @@
                     </div>
                 </div>
             `;
-
-            // CAŁA MAGIA BEZPIECZEŃSTWA ŁADOWANIA OBRAZKA I RETRY
-            const qImg = document.getElementById('current-q-img');
-            const qLoader = document.getElementById('img-loader-text');
-            
-            if (qImg) {
-                let retries = 0;
-                const maxRetries = 1; // 1 Próba ratunkowa z Pollinations
-
-                const attemptLoad = (imgUrl) => {
-                    console.log("Próbuję załadować obraz z URL:", imgUrl);
-                    qImg.src = imgUrl;
-                };
-
-                // Przypisujemy zachowania ZANIM zlecimy pobieranie
-                qImg.onload = () => {
-                    qImg.style.opacity = '1';
-                    if (qLoader) qLoader.style.display = 'none';
-                };
-                
-                qImg.onerror = () => {
-                    if (retries < maxRetries) {
-                        retries++;
-                        console.warn(`Błąd serwera AI. Ponawiam próbę...`);
-                        
-                        const newSeed = Math.floor(Math.random() * 999999);
-                        const newUrl = q.img.replace(/seed=\d+/, `seed=${newSeed}`);
-                        setTimeout(() => attemptLoad(newUrl), 1000);
-                    } else {
-                        // Awaryjne ładowanie zastępczego tła z Picsum. Zawsze działa!
-                        console.error("Pollinations całkowicie leży. Ładuję tło kinowe z Picsum.");
-                        if (qLoader) {
-                            qLoader.innerText = "⚠️ Użyto tła zastępczego";
-                            qLoader.style.color = "var(--warning)";
-                            qLoader.style.animation = "none";
-                        }
-                        
-                        // Zmieniamy funkcję onload dla nowego źródła obrazka
-                        qImg.onload = () => {
-                            qImg.style.opacity = '1';
-                            setTimeout(() => { if(qLoader) qLoader.style.display = 'none'; }, 1500);
-                        };
-                        
-                        // Dodajemy ciemny filtr i wczytujemy abstrakcyjne zdjęcie
-                        qImg.style.filter = "brightness(0.5) blur(1px)";
-                        qImg.src = `https://picsum.photos/seed/${Math.floor(Math.random() * 99999)}/400/250`;
-                    }
-                };
-
-                // Pierwsza próba pobrania
-                attemptLoad(q.img);
-            }
         }
 
         function showAnswer() {
